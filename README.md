@@ -12,10 +12,10 @@ Solo travelers often struggle to find safe, trustworthy, and compatible journey 
 Travel Buddy is a verified travel companion matching platform that uses:
 - LinkedIn verification
 - Passport verification
-- trust-based matching logic
-- profile completeness
-- route compatibility
-- satisfaction prediction
+- Trust-based matching logic
+- Profile completeness
+- Route compatibility
+- Satisfaction prediction
 
 The platform follows a single-match logic rather than endless swiping, making the journey-planning experience more focused and safer.
 
@@ -25,79 +25,95 @@ This dashboard is designed to align with the academic project requirements:
 1. Synthetic data generation for business validation  
 2. Data cleaning and transformation  
 3. Descriptive analytics / EDA with graphs and logical insights  
-4. Advanced analytics including:
-   - classification algorithms with evaluation
-   - clustering with interpretation
+4. Advanced analytics including:  
+   - classification algorithms with evaluation  
+   - clustering with interpretation  
    - Linear, Ridge, and Lasso regression  
-5. Report-ready and presentation-ready summary sections
+5. Report-ready summary section  
 
 ## Dashboard Sections
 The Streamlit app includes the following sections:
 
-1. **Executive Summary**  
+1. **Profile Builder**  
+   Shows profile completion patterns and match success impact.
+
+2. **Executive Summary**  
    High-level KPIs and business validation overview.
 
-2. **Data Cleaning & Transformation**  
-   Shows preprocessing steps, data types, missing value handling, and transformed features.
+3. **Global Routes**  
+   Route-level success analysis across important travel corridors.
 
-3. **EDA / Descriptive Analytics**  
-   Includes age distribution, satisfaction distribution, route analysis, transport analysis, and correlation matrix.
+4. **Transport Analytics**  
+   Transport mode and class performance insights.
 
-4. **Classification Models**  
-   Compares multiple classifiers using:
-   - Accuracy
-   - Precision
-   - Recall
-   - F1-score
-   - ROC-AUC
+5. **Demographics**  
+   Age and trust-based segmentation of verified users.
 
-   Models included:
-   - Logistic Regression
-   - Decision Tree
-   - Random Forest
-   - KNN
-   - Naive Bayes
-   - SVM
-   - Gradient Boosting
-   - XGBoost (if available)
+6. **Match Engine**  
+   Trust and matching performance analysis.
 
-5. **Clustering Analysis**  
-   Uses K-Means clustering with:
-   - elbow method
-   - silhouette score
-   - cluster profiling
-   - business interpretation of traveler personas
+7. **Satisfaction**  
+   Satisfaction outcomes based on match status and trust.
 
-6. **Regression Analysis**  
-   Compares:
-   - Linear Regression
-   - Ridge Regression
-   - Lasso Regression
+8. **Advanced Analytics**  
+   Includes formal analytics modules for classification, clustering, and regression.
 
-   Evaluation metrics:
-   - R²
-   - RMSE
-   - MAE
-
-7. **Report Summary**  
+9. **Report Summary**  
    A ready-to-use text summary for the final written report.
 
-8. **Presentation Summary**  
-   A ready-to-use slide outline for final presentation preparation.
+## Advanced Analytics
+
+### Classification Models
+The dashboard compares multiple classifiers using:
+- Accuracy
+- Precision
+- Recall
+- F1-score
+- ROC-AUC
+
+Models included:
+- Logistic Regression
+- Decision Tree
+- Random Forest
+- KNN
+- Naive Bayes
+- SVM
+- Gradient Boosting
+- XGBoost (if available)
+
+### Clustering Analysis
+The dashboard uses K-Means clustering with:
+- Elbow method
+- Silhouette score
+- Cluster profiling
+- Business interpretation of traveler personas
+
+### Regression Analysis
+The dashboard compares:
+- Linear Regression
+- Ridge Regression
+- Lasso Regression
+
+Evaluation metrics:
+- R²
+- RMSE
+- MAE
 
 ## Synthetic Dataset
 The application generates an embedded synthetic dataset and does not require an external CSV file.
 
 Dataset characteristics include:
 - 2,000 synthetic users
-- verified user signals
-- travel routes
-- transport mode
-- travel class
-- trust score
-- route compatibility
-- satisfaction
-- journey companion success
+- Verified user signals
+- Travel routes
+- Transport mode
+- Travel class
+- Trust score
+- Route compatibility
+- Satisfaction
+- Journey companion success
+- Derived verification counts
+- Age-group transformation
 
 This dataset is used to validate the business idea in the absence of real startup transaction data.
 
@@ -110,10 +126,10 @@ Some important fields used in analysis include:
 - `Route_Compatibility`
 - `Journey_Companion_Found`
 - `Satisfaction`
-- `Trips_Per_Year`
-- `Response_Time_Minutes`
 - `Transport_Mode`
 - `Travel_Class`
+- `Verified_Total`
+- `Age_Group`
 
 ## Technologies Used
 - Python
@@ -122,7 +138,8 @@ Some important fields used in analysis include:
 - NumPy
 - Plotly
 - Scikit-learn
-- XGBoost
+- XGBoost (optional)
+- Statsmodels
 
 ## Installation
 Clone the repository and install dependencies:
@@ -137,17 +154,39 @@ Run the app:
 streamlit run app.py
 ```
 
+## Deployment Files
+Recommended supporting files:
+
+### `requirements.txt`
+```txt
+streamlit
+pandas
+numpy
+plotly
+scikit-learn
+xgboost
+statsmodels
+```
+
+### `runtime.txt`
+```txt
+python-3.11.9
+```
+
+### `packages.txt`
+No extra system packages are required for this project.
+
 ## Deployment Notes
 The project is compatible with Streamlit Community Cloud or similar Python deployment environments.
 
 ## Academic Use
 This dashboard is structured to support:
-- report screenshots
+- Report screenshots
 - EDA discussion
-- machine learning comparison tables
-- clustering interpretation
-- regression analysis
-- presentation slide preparation
+- Machine learning comparison tables
+- Clustering interpretation
+- Regression analysis
+- Final report summary drafting
 
 ## Expected Outcome
 The final dashboard supports the business case that trust, verification, route compatibility, and complete profiles improve successful companion matching and overall travel satisfaction.
