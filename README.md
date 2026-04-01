@@ -29,7 +29,6 @@ This dashboard is designed to align with the academic project requirements:
    - classification algorithms with evaluation  
    - clustering with interpretation  
    - Linear, Ridge, and Lasso regression  
-5. Report-ready summary section  
 
 ## Dashboard Sections
 The Streamlit app includes the following sections:
@@ -37,11 +36,11 @@ The Streamlit app includes the following sections:
 1. **Profile Builder**  
    Shows profile completion patterns and match success impact.
 
-2. **Executive Summary**  
+2. **KPI Overview**  
    High-level KPIs and business validation overview.
 
 3. **Global Routes**  
-   Route-level success analysis across important travel corridors.
+   Route-level success analysis across important travel corridors, including a world map of top 20 routes.
 
 4. **Transport Analytics**  
    Transport mode and class performance insights.
@@ -58,8 +57,8 @@ The Streamlit app includes the following sections:
 8. **Advanced Analytics**  
    Includes formal analytics modules for classification, clustering, and regression.
 
-9. **Report Summary**  
-   A ready-to-use text summary for the final written report.
+## Sidebar Features
+The dashboard includes a demographic filter for **Age Group** in the left panel, allowing interactive exploration of all visualizations across selected age segments.
 
 ## Advanced Analytics
 
@@ -112,6 +111,8 @@ Dataset characteristics include:
 - Route compatibility
 - Satisfaction
 - Journey companion success
+- Trips per year
+- Response time minutes
 - Derived verification counts
 - Age-group transformation
 
@@ -130,6 +131,8 @@ Some important fields used in analysis include:
 - `Travel_Class`
 - `Verified_Total`
 - `Age_Group`
+- `Trips_Per_Year`
+- `Response_Time_Minutes`
 
 ## Technologies Used
 - Python
@@ -186,7 +189,6 @@ This dashboard is structured to support:
 - Machine learning comparison tables
 - Clustering interpretation
 - Regression analysis
-- Final report summary drafting
 
 ## Expected Outcome
 The final dashboard supports the business case that trust, verification, route compatibility, and complete profiles improve successful companion matching and overall travel satisfaction.

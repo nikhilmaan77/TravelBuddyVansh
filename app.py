@@ -12,7 +12,6 @@ import pandas as pd
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 
 from sklearn.model_selection import train_test_split
 from sklearn.compose import ColumnTransformer
@@ -38,7 +37,6 @@ try:
 except Exception:
     XGB_AVAILABLE = False
 
-# Page config - Dark professional theme
 st.set_page_config(
     page_title="Travel Buddy Dashboard",
     page_icon="✈️",
@@ -46,7 +44,6 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom Dark Theme CSS (Professor-ready)
 st.markdown("""
 <style>
     .stApp {
@@ -65,10 +62,8 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Embedded dataset generation (No external CSV needed) - ORIGINAL
 @st.cache_data
 def load_data():
-    """Generate 2000 verified user dataset"""
     np.random.seed(42)
     n = 2000
 
@@ -76,8 +71,19 @@ def load_data():
     cities_from = ['NYC', 'Singapore', 'Delhi', 'Amsterdam', 'London', 'Dubai', 'Berlin']
     cities_to = ['London', 'Delhi', 'Dubai', 'NYC', 'Singapore', 'Amsterdam', 'Paris']
 
+    city_coords = {
+        'NYC': {'lat': 40.7128, 'lon': -74.0060},
+        'Singapore': {'lat': 1.3521, 'lon': 103.8198},
+        'Delhi': {'lat': 28.6139, 'lon': 77.2090},
+        'Amsterdam': {'lat': 52.3676, 'lon': 4.9041},
+        'London': {'lat': 51.5072, 'lon': -0.1276},
+        'Dubai': {'lat': 25.2048, 'lon': 55.2708},
+        'Berlin': {'lat': 52.5200, 'lon': 13.4050},
+        'Paris': {'lat': 48.8566, 'lon': 2.3522}
+    }
+
     df = pd.DataFrame({
-        'User_ID': range(1, n+1),
+        'User_ID': range(1, n + 1),
         'LinkedIn_Verified': np.random.choice([True, False], n, p=[0.94, 0.06]),
         'Passport_Verified': np.random.choice([True, False], n, p=[0.92, 0.08]),
         'Profile_Completeness': np.clip(np.random.normal(92, 8, n), 50, 100).round(1),
@@ -92,14 +98,12 @@ def load_data():
         'Route_Compatibility': np.clip(np.random.normal(88, 10, n), 60, 100).round(1)
     })
 
-    # Business logic: Trust levels
     df['Trust_Level'] = np.where(
         (df['LinkedIn_Verified']) & (df['Passport_Verified']), 'Double Verified',
         np.where(df['LinkedIn_Verified'], 'LinkedIn Only',
                  np.where(df['Passport_Verified'], 'Passport Only', 'Unverified'))
     )
 
-    # Match success logic
     good_profile_mask = (
         (df['Profile_Completeness'] > 90) &
         (df['Trust_Score'] > 85) &
@@ -120,10 +124,15 @@ def load_data():
         np.clip(np.random.normal(2.8, 0.8, n), 1, 5).round(1)
     )
 
-    # Extra engineered field for analytics
     df['Verified_Total'] = df['LinkedIn_Verified'].astype(int) + df['Passport_Verified'].astype(int)
+    df['Trips_Per_Year'] = np.random.randint(1, 9, n)
+    df['Response_Time_Minutes'] = np.clip(np.random.normal(18, 8, n), 3, 60).round(0)
 
-    # Filter verified users only
+    df['From_Lat'] = df['City_From'].map(lambda x: city_coords[x]['lat'])
+    df['From_Lon'] = df['City_From'].map(lambda x: city_coords[x]['lon'])
+    df['To_Lat'] = df['City_To'].map(lambda x: city_coords.get(x, {'lat': 0})['lat'])
+    df['To_Lon'] = df['City_To'].map(lambda x: city_coords.get(x, {'lon': 0})['lon'])
+
     verified_df = df[(df['LinkedIn_Verified']) | (df['Passport_Verified'])].reset_index(drop=True)
     return verified_df
 
@@ -132,7 +141,7 @@ def clean_transform_data(df):
     df = df.copy()
     df.drop_duplicates(inplace=True)
 
-    for col in ['Age', 'Profile_Completeness', 'Trust_Score', 'Route_Compatibility', 'Satisfaction']:
+    for col in ['Age', 'Profile_Completeness', 'Trust_Score', 'Route_Compatibility', 'Satisfaction', 'Trips_Per_Year', 'Response_Time_Minutes']:
         df[col] = pd.to_numeric(df[col], errors='coerce')
 
     for col in ['Gender', 'City_From', 'City_To', 'Transport_Mode', 'Travel_Class', 'Trust_Level']:
@@ -147,11 +156,12 @@ def get_feature_lists():
         'LinkedIn_Verified', 'Passport_Verified', 'Profile_Completeness',
         'Trust_Score', 'Route_Compatibility', 'Age',
         'Gender', 'City_From', 'City_To', 'Transport_Mode', 'Travel_Class',
-        'Verified_Total'
+        'Verified_Total', 'Trips_Per_Year', 'Response_Time_Minutes'
     ]
     numeric_features = [
         'LinkedIn_Verified', 'Passport_Verified', 'Profile_Completeness',
-        'Trust_Score', 'Route_Compatibility', 'Age', 'Verified_Total'
+        'Trust_Score', 'Route_Compatibility', 'Age', 'Verified_Total',
+        'Trips_Per_Year', 'Response_Time_Minutes'
     ]
     categorical_features = ['Gender', 'City_From', 'City_To', 'Transport_Mode', 'Travel_Class']
     return feature_cols, numeric_features, categorical_features
@@ -244,11 +254,9 @@ def run_classification_models(df):
         if name == 'Naive Bayes':
             X_train_t = pre_scaled.fit_transform(X_train)
             X_test_t = pre_scaled.transform(X_test)
-
             if hasattr(X_train_t, 'toarray'):
                 X_train_t = X_train_t.toarray()
                 X_test_t = X_test_t.toarray()
-
             model = GaussianNB()
             model.fit(X_train_t, y_train)
             preds = model.predict(X_test_t)
@@ -268,26 +276,19 @@ def run_classification_models(df):
         })
         confusion_store[name] = confusion_matrix(y_test, preds)
 
-    results_df = pd.DataFrame(rows).sort_values('F1_Score', ascending=False).reset_index(drop=True)
-    return results_df, confusion_store
+    return pd.DataFrame(rows).sort_values('F1_Score', ascending=False).reset_index(drop=True), confusion_store
 
 
 @st.cache_data
 def run_clustering(df):
-    cluster_features = [
-        'Age', 'Profile_Completeness', 'Trust_Score',
-        'Route_Compatibility', 'Satisfaction', 'Verified_Total'
-    ]
-
-    X = df[cluster_features].copy()
-    X = X.fillna(X.median(numeric_only=True))
+    cluster_features = ['Age', 'Profile_Completeness', 'Trust_Score', 'Route_Compatibility', 'Satisfaction', 'Verified_Total', 'Trips_Per_Year', 'Response_Time_Minutes']
+    X = df[cluster_features].copy().fillna(df[cluster_features].median(numeric_only=True))
 
     scaler = StandardScaler()
     X_scaled = scaler.fit_transform(X)
 
     elbow_rows = []
     sil_rows = []
-
     for k in range(2, 7):
         km = KMeans(n_clusters=k, random_state=42, n_init=10)
         labels = km.fit_predict(X_scaled)
@@ -296,8 +297,8 @@ def run_clustering(df):
 
     elbow_df = pd.DataFrame(elbow_rows)
     sil_df = pd.DataFrame(sil_rows)
-
     best_k = int(sil_df.sort_values('silhouette', ascending=False).iloc[0]['k'])
+
     km = KMeans(n_clusters=best_k, random_state=42, n_init=10)
     out = df.copy()
     out['Cluster'] = km.fit_predict(X_scaled)
@@ -309,14 +310,12 @@ def run_clustering(df):
         'Route_Compatibility': 'mean',
         'Satisfaction': 'mean',
         'Journey_Companion_Found': 'mean',
+        'Trips_Per_Year': 'mean',
+        'Response_Time_Minutes': 'mean',
         'User_ID': 'count'
     }).round(2).reset_index()
 
-    profile.rename(columns={
-        'Journey_Companion_Found': 'Match_Success_Rate',
-        'User_ID': 'Users'
-    }, inplace=True)
-
+    profile.rename(columns={'Journey_Companion_Found': 'Match_Success_Rate', 'User_ID': 'Users'}, inplace=True)
     profile['Match_Success_Rate'] = (profile['Match_Success_Rate'] * 100).round(1)
 
     labels_map = {}
@@ -330,7 +329,6 @@ def run_clustering(df):
 
     out['Cluster_Label'] = out['Cluster'].map(labels_map)
     profile['Cluster_Label'] = profile['Cluster'].map(labels_map)
-
     return out, elbow_df, sil_df, profile, best_k
 
 
@@ -340,69 +338,110 @@ def run_regression_models(df):
     X = df[feature_cols]
     y = df['Satisfaction']
 
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.20, random_state=42
-    )
-
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=42)
     preprocessor = build_preprocessor(numeric_features, categorical_features, scale_numeric=True)
 
     models = {
-        'Linear Regression': Pipeline([
-            ('preprocessor', preprocessor),
-            ('model', LinearRegression())
-        ]),
-        'Ridge Regression': Pipeline([
-            ('preprocessor', preprocessor),
-            ('model', Ridge(alpha=1.0))
-        ]),
-        'Lasso Regression': Pipeline([
-            ('preprocessor', preprocessor),
-            ('model', Lasso(alpha=0.01))
-        ])
+        'Linear Regression': Pipeline([('preprocessor', preprocessor), ('model', LinearRegression())]),
+        'Ridge Regression': Pipeline([('preprocessor', preprocessor), ('model', Ridge(alpha=1.0))]),
+        'Lasso Regression': Pipeline([('preprocessor', preprocessor), ('model', Lasso(alpha=0.01))])
     }
 
     rows = []
     preds_store = {}
-
     for name, pipe in models.items():
         pipe.fit(X_train, y_train)
         preds = pipe.predict(X_test)
-
         rows.append({
             'Model': name,
             'R2': round(r2_score(y_test, preds), 4),
             'RMSE': round(np.sqrt(mean_squared_error(y_test, preds)), 4),
             'MAE': round(mean_absolute_error(y_test, preds), 4)
         })
-
         preds_store[name] = {'actual': y_test.values, 'predicted': preds}
 
-    reg_df = pd.DataFrame(rows).sort_values('R2', ascending=False).reset_index(drop=True)
-    return reg_df, preds_store
+    return pd.DataFrame(rows).sort_values('R2', ascending=False).reset_index(drop=True), preds_store
 
 
-# Load data
+def apply_age_filter(df, selected_age_groups):
+    if not selected_age_groups:
+        return df
+    return df[df['Age_Group'].astype(str).isin(selected_age_groups)]
+
+
+def build_route_map(route_data):
+    fig = go.Figure()
+
+    for _, row in route_data.iterrows():
+        color = '#00d4aa' if row['Success_Rate_Pct'] >= 75 else '#ffd166' if row['Success_Rate_Pct'] >= 60 else '#ff6b6b'
+        fig.add_trace(go.Scattergeo(
+            lon=[row['From_Lon'], row['To_Lon']],
+            lat=[row['From_Lat'], row['To_Lat']],
+            mode='lines',
+            line=dict(width=max(1.5, min(6, row['Volume'] / 25)), color=color),
+            opacity=0.75,
+            hoverinfo='text',
+            text=f"{row['City_From']} → {row['City_To']}<br>Success: {row['Success_Rate_Pct']:.1f}%<br>Volume: {int(row['Volume'])}"
+        ))
+
+    city_points = pd.concat([
+        route_data[['City_From', 'From_Lat', 'From_Lon']].rename(columns={'City_From': 'City', 'From_Lat': 'Lat', 'From_Lon': 'Lon'}),
+        route_data[['City_To', 'To_Lat', 'To_Lon']].rename(columns={'City_To': 'City', 'To_Lat': 'Lat', 'To_Lon': 'Lon'})
+    ]).drop_duplicates()
+
+    fig.add_trace(go.Scattergeo(
+        lon=city_points['Lon'],
+        lat=city_points['Lat'],
+        mode='markers+text',
+        text=city_points['City'],
+        textposition='top center',
+        marker=dict(size=7, color='#ffffff', line=dict(width=1, color='#00d4aa')),
+        hoverinfo='text'
+    ))
+
+    fig.update_layout(
+        title='Top 20 Global Routes World Map',
+        geo=dict(
+            projection_type='natural earth',
+            showland=True,
+            landcolor='rgb(25, 33, 52)',
+            showocean=True,
+            oceancolor='rgb(10, 20, 40)',
+            showcountries=True,
+            countrycolor='rgb(80, 80, 100)',
+            bgcolor='rgba(0,0,0,0)'
+        ),
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)',
+        height=650,
+        margin=dict(l=0, r=0, t=50, b=0)
+    )
+    return fig
+
+
 df = clean_transform_data(load_data())
 
-# Header
 st.title("✈️ Travel Buddy - Verified Global Dashboard")
-st.markdown("**LinkedIn + Passport Verified | Single Match Platform | Enhanced Analytics Module Added**")
+st.markdown("**LinkedIn + Passport Verified | Single Match Platform**")
 
-# Sidebar navigation - UPDATED
 st.sidebar.title("📊 Navigation")
 selected_tab = st.sidebar.selectbox("Choose Dashboard Tab", [
     "👤 1. Profile Builder",
-    "📊 2. Executive Summary",
+    "📊 2. KPI Overview",
     "🌍 3. Global Routes",
     "🛤️ 4. Transport Analytics",
     "👥 5. Demographics",
     "🎯 6. Match Engine",
     "😊 7. Satisfaction",
-    "🤖 8. Advanced Analytics",
-    "📝 9. Report Summary"
+    "🤖 8. Advanced Analytics"
 ])
 
-# TAB 1: Profile Builder - ORIGINAL
+age_group_options = [str(x) for x in df['Age_Group'].dropna().astype(str).unique().tolist()]
+age_group_options = sorted(age_group_options)
+selected_age_groups = st.sidebar.multiselect("Filter by Age Group", age_group_options, default=age_group_options)
+
+df = apply_age_filter(df, selected_age_groups)
+
 if selected_tab == "👤 1. Profile Builder":
     st.header("📈 Profile Completion → Match Success")
 
@@ -432,9 +471,8 @@ if selected_tab == "👤 1. Profile Builder":
 - Double verified users achieve **89% match success** vs 41% unverified
 """)
 
-# TAB 2: Executive Summary - ORIGINAL
-elif selected_tab == "📊 2. Executive Summary":
-    st.header("🎯 Trust & Safety KPIs")
+elif selected_tab == "📊 2. KPI Overview":
+    st.header("🎯 KPI Overview")
 
     col1, col2, col3, col4, col5 = st.columns(5)
     with col1:
@@ -471,33 +509,51 @@ elif selected_tab == "📊 2. Executive Summary":
 - Safety score **97%** (industry leading)
 """)
 
-# TAB 3: Global Routes - ORIGINAL
 elif selected_tab == "🌍 3. Global Routes":
     st.header("🌐 Worldwide Route Performance")
 
     route_data = df.groupby(['City_From', 'City_To']).agg({
-        'Journey_Companion_Found': ['mean', 'count']
+        'Journey_Companion_Found': ['mean', 'count'],
+        'From_Lat': 'first',
+        'From_Lon': 'first',
+        'To_Lat': 'first',
+        'To_Lon': 'first'
     }).round(3).reset_index()
-    route_data.columns = ['City_From', 'City_To', 'Success_Rate', 'Volume']
+    route_data.columns = ['City_From', 'City_To', 'Success_Rate', 'Volume', 'From_Lat', 'From_Lon', 'To_Lat', 'To_Lon']
     route_data['Success_Rate_Pct'] = route_data['Success_Rate'] * 100
+    top_routes = route_data.nlargest(20, 'Volume').copy()
 
-    fig_route = px.sunburst(
-        route_data.nlargest(20, 'Volume'),
-        path=['City_From', 'City_To'],
-        values='Volume',
-        color='Success_Rate_Pct',
-        color_continuous_scale='RdYlGn',
-        title="Top 20 Global Routes (Success %)"
-    )
-    st.plotly_chart(fig_route, use_container_width=True)
+    col1, col2 = st.columns([1, 1])
+    with col1:
+        fig_route = px.sunburst(
+            top_routes,
+            path=['City_From', 'City_To'],
+            values='Volume',
+            color='Success_Rate_Pct',
+            color_continuous_scale='RdYlGn',
+            title="Top 20 Global Routes (Success %)"
+        )
+        st.plotly_chart(fig_route, use_container_width=True)
+
+    with col2:
+        fig_route_bar = px.bar(
+            top_routes.sort_values('Success_Rate_Pct', ascending=False),
+            x='City_From',
+            y='Success_Rate_Pct',
+            color='City_To',
+            hover_data=['Volume'],
+            title='Top Route Success % by Origin'
+        )
+        st.plotly_chart(fig_route_bar, use_container_width=True)
+
+    st.plotly_chart(build_route_map(top_routes), use_container_width=True)
 
     st.markdown("""
 **Two-liner Insight:**
 - **NYC→London** and **Singapore→Delhi** lead the highest-volume trusted routes
-- Top corridors account for the majority of matching activity
+- The world map highlights top 20 global corridors with color-coded success performance
 """)
 
-# TAB 4: Transport Analytics - ORIGINAL
 elif selected_tab == "🛤️ 4. Transport Analytics":
     st.header("✈️🚂 Transport + Class Performance")
 
@@ -526,12 +582,10 @@ elif selected_tab == "🛤️ 4. Transport Analytics":
 - Premium travelers perform better than economy users on average
 """)
 
-# TAB 5: Demographics
 elif selected_tab == "👥 5. Demographics":
     st.header("📊 Verified User Segments")
 
-    demo_data = df.copy()
-    demo_summary = demo_data.groupby(['Trust_Level', 'Age_Group']).agg({
+    demo_summary = df.groupby(['Trust_Level', 'Age_Group']).agg({
         'Journey_Companion_Found': 'mean',
         'User_ID': 'count'
     }).round(3).reset_index()
@@ -555,7 +609,6 @@ elif selected_tab == "👥 5. Demographics":
 - Double verified users outperform single verified users across most age groups
 """)
 
-# TAB 6: Match Engine - ORIGINAL
 elif selected_tab == "🎯 6. Match Engine":
     st.header("⚡ Single Match Algorithm Performance")
 
@@ -572,7 +625,6 @@ elif selected_tab == "🎯 6. Match Engine":
 - Better trust alignment leads to stronger post-match satisfaction
 """)
 
-# TAB 7: Satisfaction - ORIGINAL
 elif selected_tab == "😊 7. Satisfaction":
     st.header("❤️ User Satisfaction Outcomes")
 
@@ -588,7 +640,6 @@ elif selected_tab == "😊 7. Satisfaction":
 - Trust remains a strong emotional and service-quality driver
 """)
 
-# TAB 8: NEW FORMAL ANALYTICS
 elif selected_tab == "🤖 8. Advanced Analytics":
     st.header("🔬 Formal Analytics Module")
 
@@ -641,6 +692,7 @@ elif selected_tab == "🤖 8. Advanced Analytics":
         x='Trust_Score',
         y='Satisfaction',
         color='Cluster_Label',
+        size='Trips_Per_Year',
         hover_data=['Age', 'Profile_Completeness', 'Journey_Companion_Found'],
         title="Cluster Profile Interpretation"
     )
@@ -665,10 +717,7 @@ elif selected_tab == "🤖 8. Advanced Analytics":
         key="regression_model_select"
     )
     pred_data = preds_store[reg_model]
-    reg_plot_df = pd.DataFrame({
-        'Actual': pred_data['actual'],
-        'Predicted': pred_data['predicted']
-    })
+    reg_plot_df = pd.DataFrame({'Actual': pred_data['actual'], 'Predicted': pred_data['predicted']})
 
     fig_pred = px.scatter(
         reg_plot_df,
@@ -678,63 +727,3 @@ elif selected_tab == "🤖 8. Advanced Analytics":
         title=f"Actual vs Predicted Satisfaction - {reg_model}"
     )
     st.plotly_chart(fig_pred, use_container_width=True)
-
-# TAB 9: REPORT SUMMARY
-elif selected_tab == "📝 9. Report Summary":
-    st.header("📝 Report-Ready Output Section")
-
-    classification_results, _ = run_classification_models(df)
-    _, _, _, cluster_profile, best_k = run_clustering(df)
-    regression_results, _ = run_regression_models(df)
-
-    best_classifier = classification_results.iloc[0]
-    best_regressor = regression_results.iloc[0]
-
-    st.markdown(f"""
-### Abstract-Style Summary
-Travel Buddy is a verified solo travel companion platform designed to validate a trust-first business idea using synthetic data and formal analytics.
-
-### Dataset Domain
-- Domain: Travel technology / trusted companion matching
-- Dataset type: Synthetic startup validation data
-
-### Data Cleaning Steps
-- Duplicate removal
-- Data type standardization
-- Missing value treatment
-- Age group transformation
-- Verified signal engineering
-
-### Algorithms Used
-- Classification: Logistic Regression, Decision Tree, Random Forest, KNN, Naive Bayes, SVM, Gradient Boosting{" , XGBoost" if XGB_AVAILABLE else ""}
-- Clustering: K-Means with elbow method and silhouette score
-- Regression: Linear Regression, Ridge Regression, Lasso Regression
-
-### Best Model Results
-- Best classifier: **{best_classifier['Model']}**
-- Accuracy: **{best_classifier['Accuracy']}**
-- Precision: **{best_classifier['Precision']}**
-- Recall: **{best_classifier['Recall']}**
-- F1-score: **{best_classifier['F1_Score']}**
-- ROC-AUC: **{best_classifier['ROC_AUC']}**
-
-- Best regression model: **{best_regressor['Model']}**
-- R²: **{best_regressor['R2']}**
-- RMSE: **{best_regressor['RMSE']}**
-- MAE: **{best_regressor['MAE']}**
-
-### Cluster Profile Interpretation
-- Best cluster count selected: **{best_k}**
-- Clusters interpreted as meaningful traveler personas using trust, compatibility, and satisfaction dimensions.
-""")
-
-# Footer
-st.sidebar.markdown("---")
-st.sidebar.markdown("""
-**Travel Buddy Dashboard v3.0**
-✅ Original dashboard retained  
-✅ Formal classification comparison added  
-✅ K-Means clustering added  
-✅ Linear / Ridge / Lasso added  
-✅ Report summary tab added
-""")
