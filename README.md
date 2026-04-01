@@ -102,7 +102,7 @@ Evaluation metrics:
 The application generates an embedded synthetic dataset and does not require an external CSV file.
 
 Dataset characteristics include:
-- 2,000 synthetic users
+- 2,400 synthetic users
 - Verified user signals
 - Travel routes
 - Transport mode
@@ -115,6 +115,7 @@ Dataset characteristics include:
 - Response time minutes
 - Derived verification counts
 - Age-group transformation
+- Expanded city-level coordinates for route mapping
 
 This dataset is used to validate the business idea in the absence of real startup transaction data.
 
@@ -133,6 +134,36 @@ Some important fields used in analysis include:
 - `Age_Group`
 - `Trips_Per_Year`
 - `Response_Time_Minutes`
+- `City_From`
+- `City_To`
+- `Country_From`
+- `Country_To`
+
+## Route Map Coverage
+The interactive global map includes major city coordinates and route visibility for key travel nodes such as:
+- Mumbai
+- Pune
+- Bangalore
+- Delhi
+- Singapore
+- Dubai
+- Amsterdam
+- London
+- Berlin
+- NYC
+- San Francisco
+- Paris
+
+This ensures that major origin-destination routes are visible in the dashboard map and improves presentation quality for report screenshots.
+
+## Sankey Improvement
+The KPI Overview tab includes a Sankey diagram with updated distinct contrasting colors for:
+- All users
+- Single verified users
+- Double verified users
+- Matched users
+
+This improves readability and makes user-conversion flow easier to interpret visually.
 
 ## Technologies Used
 - Python
@@ -142,7 +173,6 @@ Some important fields used in analysis include:
 - Plotly
 - Scikit-learn
 - XGBoost (optional)
-- Statsmodels
 
 ## Installation
 Clone the repository and install dependencies:
@@ -168,16 +198,17 @@ numpy
 plotly
 scikit-learn
 xgboost
-statsmodels
 ```
 
 ### `runtime.txt`
 ```txt
-python-3.11.9
+python-3.11
 ```
 
 ### `packages.txt`
-No extra system packages are required for this project.
+```txt
+build-essential
+```
 
 ## Deployment Notes
 The project is compatible with Streamlit Community Cloud or similar Python deployment environments.
@@ -189,6 +220,7 @@ This dashboard is structured to support:
 - Machine learning comparison tables
 - Clustering interpretation
 - Regression analysis
+- Business validation storytelling
 
 ## Expected Outcome
 The final dashboard supports the business case that trust, verification, route compatibility, and complete profiles improve successful companion matching and overall travel satisfaction.
